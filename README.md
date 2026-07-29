@@ -1,8 +1,16 @@
 # coder-dotfiles
 
 Personal [Coder](https://coder.com) workspace dotfiles for **Noah Harrison**, forked from
-[`Aqemia/coder-default-dotfiles`](https://github.com/Aqemia/coder-default-dotfiles) and extended
-with the tools and shell config previously carried in `~/personalize`.
+[`Aqemia/coder-default-dotfiles`](https://github.com/Aqemia/coder-default-dotfiles).
+
+The repo is split into two layers so the general parts are reusable by anyone:
+
+- **General layer** - the base setup (shell framework, prompt, aliases, mise, zellij, mosh). Applies
+  to any Coder workspace and is safe to copy/fork.
+- **Engineering layer** (`engineering/`) - Aqemia-engineering-only tooling (observability MCPs,
+  1Password CLI, `connect_to_db`). **Delete the `engineering/` directory** (or set
+  `DOTFILES_NO_ENGINEERING=1`) and you're left with a clean, general-purpose dotfiles repo - no dead
+  references, no engineering tooling attempted.
 
 ## How Coder uses this
 
@@ -22,76 +30,84 @@ On **every workspace start** Coder clones this repo and runs `install.sh`. Two c
 
 ## What this installs & configures
 
-Legend: **[base]** = inherited from `coder-default-dotfiles`; **[mine]** = added in this fork.
-Tools marked *(configures)* are already present in the workspace image; the dotfiles only wire them up.
+Legend: **[general]** = base layer (much of it inherited from `coder-default-dotfiles`);
+**[eng]** = engineering layer, lives in `engineering/`. Tools marked *(configures)* are already in the
+workspace image; the dotfiles only wire them up.
 
 ### Shell framework & prompt
-| Item | Source | Notes |
-|------|--------|-------|
-| **bash-it** | [base] | Installed to `~/.bash_it`; theme `pure`, with completions (git, docker, kubectl, terraform, gh, go) and the base plugin |
-| **zsh plugins** | [base] | `zsh-autosuggestions` + `zsh-syntax-highlighting` (only when `PREFERRED_SHELL=zsh`) |
-| **starship** *(configures)* | [base] | Prompt; k8s segment enabled, aws/gcloud/container segments disabled (see `.config/starship.toml`) |
-| **zoxide** *(configures)* | [base] | Smart `cd` |
-| Interactive guard in `~/.bashrc` | [base] | Early-returns for non-interactive shells so sshd-spawned shells behave |
+| Item | Layer | Notes |
+|------|-------|-------|
+| **bash-it** | [general] | Installed to `~/.bash_it`; theme `pure`, completions (git, docker, kubectl, terraform, gh, go), base plugin. Auto-sources `~/.bash_it/custom/*.bash` |
+| **zsh plugins** | [general] | `zsh-autosuggestions` + `zsh-syntax-highlighting` (only when `PREFERRED_SHELL=zsh`) |
+| **starship** *(configures)* | [general] | Prompt; k8s segment on, aws/gcloud/container off (see `.config/starship.toml`) |
+| **zoxide** *(configures)* | [general] | Smart `cd` |
+| Interactive guard in `~/.bashrc` | [general] | Early-returns for non-interactive shells |
 
 ### CLI tools installed
-| Tool | Source | Where | Purpose |
-|------|--------|-------|---------|
-| **mcp-victoriametrics** | [mine] | `~/.local/bin` | observability-core plugin MCP (metrics) |
-| **mcp-victorialogs** | [mine] | `~/.local/bin` | observability-core plugin MCP (logs) |
-| **mcp-grafana** | [mine] | `~/.local/bin` | observability-core plugin MCP (Grafana) |
-| **op** (1Password CLI) | [mine] | `~/.local/bin` | Secret retrieval |
-| **zellij** *(via mise)* | [mine] | mise global | Terminal multiplexer |
-| **mosh-server** | [mine] | `~/.local/mosh` | Roaming SSH; conda-forge build (no root needed) |
-| **UTF-8 locales** | [mine] | `~/.locale` | `en_GB.UTF-8` / `en_US.UTF-8` compiled with `localedef` (mosh needs a resolvable UTF-8 locale) |
+| Tool | Layer | Where | Purpose |
+|------|-------|-------|---------|
+| **zellij** *(via mise)* | [general] | mise global | Terminal multiplexer |
+| **mosh-server** | [general] | `~/.local/mosh` | Roaming SSH; conda-forge build (no root needed) |
+| **UTF-8 locales** | [general] | `~/.locale` | `en_GB.UTF-8` / `en_US.UTF-8` via `localedef` (mosh needs a resolvable UTF-8 locale) |
+| **mcp-victoriametrics** | [eng] | `~/.local/bin` | observability-core plugin MCP (metrics) |
+| **mcp-victorialogs** | [eng] | `~/.local/bin` | observability-core plugin MCP (logs) |
+| **mcp-grafana** | [eng] | `~/.local/bin` | observability-core plugin MCP (Grafana) |
+| **op** (1Password CLI) | [eng] | `~/.local/bin` | Secret retrieval |
 
-`gh` is also bridged to the Coder git token at install time so `gh release download` (used to fetch the
-MCP binaries) is authenticated rather than anonymous/rate-limited.
+The engineering installer also bridges `gh` to the Coder git token so `gh release download` (used to
+fetch the MCP binaries) is authenticated rather than anonymous/rate-limited.
 
 ### Shell environment (interactive)
-| Item | Source | Notes |
-|------|--------|-------|
-| `1Password service-account token` | [mine] | Sources `~/.op-sa.env` if present (the token file lives in `$HOME`, never in this repo) |
-| `mise` activation | [mine] | Exports `MISE_GLOBAL_CONFIG_FILE` / `MISE_DATA_DIR` **before** `mise activate` so tools like Go land on `PATH` |
-| History search keybindings | [mine] | Up/Down arrows do prefix history search |
-| History settings | [base] | Large `HISTSIZE`, timestamps, `HISTIGNORE` |
-| `PATH` additions | [base] | Go (`~/go/bin`), Cargo (`~/.cargo/bin`), Krew |
-| Terraform / Terragrunt plugin cache | [base] | `TF_PLUGIN_CACHE_DIR`, `TG_PROVIDER_CACHE` |
-| `EDITOR` / `KUBE_EDITOR` = `vim` | [base] | |
-| mosh env (`LOCPATH`, `LANG`, mosh `PATH`) | [mine] | Prepended **above** the interactive guard in `~/.bashrc` so it reaches the non-interactive ssh shell `mosh-server` runs in |
+| Item | Layer | Notes |
+|------|-------|-------|
+| `mise` activation | [general] | Exports the shared-config env **before** `mise activate` so tools like Go land on `PATH` (guarded on `/opt/mise/config.toml` existing) |
+| History search keybindings | [general] | Up/Down arrows do prefix history search |
+| History settings | [general] | Large `HISTSIZE`, timestamps, `HISTIGNORE` |
+| `PATH` additions | [general] | Go (`~/go/bin`), Cargo (`~/.cargo/bin`), Krew |
+| Terraform / Terragrunt plugin cache | [general] | `TF_PLUGIN_CACHE_DIR`, `TG_PROVIDER_CACHE` |
+| `EDITOR` / `KUBE_EDITOR` = `vim` | [general] | |
+| mosh env (`LOCPATH`, `LANG`, mosh `PATH`) | [general] | Prepended **above** the interactive guard in `~/.bashrc` so it reaches the non-interactive ssh shell `mosh-server` runs in |
+| 1Password service-account token | [eng] | Sources `~/.op-sa.env` if present (token file lives in `$HOME`, never in this repo) |
 
 ### Shell functions
-| Function | Source | Purpose |
-|----------|--------|---------|
-| `connect_to_db <env>` | [mine] | Open `psql` against a database by short env name. The env->profile map, Secrets Manager secret id, and DSN key are read from `~/.connect_to_db.env` (kept in `$HOME`, not committed), so no environment or target names live in this repo |
-| `refresh-creds` | [mine] | Refresh AWS Pod-Identity + CodeArtifact creds in the current shell |
+| Function | Layer | Purpose |
+|----------|-------|---------|
+| `refresh-creds` | [general] | Refresh AWS Pod-Identity + CodeArtifact creds in the current shell (relevant to any long-running workspace) |
+| `connect_to_db <env>` | [eng] | Open `psql` against a database by short env name. The env->profile map, secret id, and DSN key are read from `~/.connect_to_db.env` (kept in `$HOME`, not committed), so no environment or target names live in this repo |
 
-### Aliases ([base], see `aliases/custom.bash`)
+### Aliases ([general], see `aliases/custom.bash`)
 `ll`, safe `rm`/`mv`/`cp` (`-i`), `vi`/`ex` -> vim, `gcd` (cd to git root), kubectl shortcuts
 (`k`, `kgp`, `kgs`, `kgn`, `kns`, `kctx`), `py` -> python3, `uvr` -> uv run.
 
 ## Layout
 
 ```
-install.sh            # entrypoint Coder runs on every start (idempotent)
-.bash_profile         # login shells source ~/.bashrc
-.config/starship.toml # prompt config
-aliases/custom.bash   # aliases (sourced for both bash and zsh)
-custom/custom.bash    # interactive bash config: env, functions, keybindings (bash only)
+install.sh              # entrypoint Coder runs on every start (idempotent)
+.bash_profile           # login shells source ~/.bashrc
+.config/starship.toml   # prompt config
+aliases/custom.bash     # aliases (sourced for both bash and zsh)
+custom/custom.bash      # general interactive bash config: env, keybindings, refresh-creds
+engineering/            # engineering-only layer - delete for a general-purpose setup
+  install.sh            #   gh bridge, observability MCP binaries, op (1Password) CLI
+  shell.bash            #   op-sa.env sourcing, connect_to_db (symlinked into ~/.bash_it/custom/)
 ```
 
-> **Shell note:** this fork targets **bash**. The interactive additions live in `custom/custom.bash`,
-> which the zsh branch does not source (zsh only sources `aliases/custom.bash`). If you switch to zsh,
-> those functions/env need porting into the zsh path.
+`install.sh` runs the general setup, then - only if `engineering/` exists and
+`DOTFILES_NO_ENGINEERING` is unset - symlinks `engineering/shell.bash` into `~/.bash_it/custom/`
+(bash-it auto-loads it) and sources `engineering/install.sh`.
 
-## Secrets
+> **Shell note:** this fork targets **bash**. Interactive config lives in `custom/custom.bash` and the
+> engineering `shell.bash`, both loaded via bash-it's `custom/` dir; the zsh branch does not source
+> them (zsh only sources `aliases/custom.bash`). Switching to zsh means porting those into the zsh path.
 
-No secrets - and no environment/target names - live in this repo. They are read from `0600` files
-kept in `$HOME` (recreate these per workspace):
+## Secrets & local config
 
-- `~/.op-sa.env` - 1Password service-account token
+No secrets - and no environment/target names - live in this repo. They are read from `0600` files kept
+in `$HOME` (recreate these per workspace):
+
+- `~/.op-sa.env` *(eng)* - 1Password service-account token
 - `~/.codeartifact.env`, `~/.aws-pod-identity.env` - refreshed AWS/CodeArtifact creds
-- `~/.connect_to_db.env` - the `connect_to_db` env->profile map, secret id, and DSN key. Format:
+- `~/.connect_to_db.env` *(eng)* - the `connect_to_db` env->profile map, secret id, and DSN key. Format:
 
   ```bash
   CONNECT_DB_SECRET_ID="<secretsmanager-secret-id>"
