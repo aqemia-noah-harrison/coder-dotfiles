@@ -158,6 +158,17 @@ if command -v mise >/dev/null 2>&1; then
   mise use -g zellij@latest || true
 fi
 
+# --- Zellij config + zellaude layout ---
+# Symlink our zellij config/layout in. The zellaude plugin referenced in
+# layouts/default.kdl is fetched by zellij on first use and self-installs its
+# Claude Code hooks into ~/.claude/settings.json, so only these two files need
+# version-controlling.
+if [ -d "$DOTFILES_DIR/.config/zellij" ]; then
+  mkdir -p "$HOME/.config/zellij/layouts"
+  ln -sf "$DOTFILES_DIR/.config/zellij/config.kdl"          "$HOME/.config/zellij/config.kdl"
+  ln -sf "$DOTFILES_DIR/.config/zellij/layouts/default.kdl" "$HOME/.config/zellij/layouts/default.kdl"
+fi
+
 # --- mosh-server + UTF-8 locales (no root; conda + ~/.locale) ---
 # mosh isn't in the mise registry and apt needs root, so install the conda-forge
 # build into an isolated prefix. mosh forwards the client's LANG (e.g.

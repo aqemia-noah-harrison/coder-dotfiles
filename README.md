@@ -46,7 +46,8 @@ workspace image; the dotfiles only wire them up.
 ### CLI tools installed
 | Tool | Layer | Where | Purpose |
 |------|-------|-------|---------|
-| **zellij** *(via mise)* | [general] | mise global | Terminal multiplexer |
+| **zellij** *(via mise)* | [general] | mise global | Terminal multiplexer; config + layout symlinked from `.config/zellij/` |
+| **zellaude** *(zellij plugin)* | [general] | `.config/zellij/layouts/default.kdl` | Claude Code activity bar. Pinned to `v0.5.0`; zellij fetches the wasm on first use and it auto-installs hooks into `~/.claude/settings.json`. Needs `jq` |
 | **mosh-server** | [general] | `~/.local/mosh` | Roaming SSH; conda-forge build (no root needed) |
 | **UTF-8 locales** | [general] | `~/.locale` | `en_GB.UTF-8` / `en_US.UTF-8` via `localedef` (mosh needs a resolvable UTF-8 locale) |
 | **mcp-victoriametrics** | [eng] | `~/.local/bin` | observability-core plugin MCP (metrics) |
@@ -85,6 +86,7 @@ fetch the MCP binaries) is authenticated rather than anonymous/rate-limited.
 install.sh              # entrypoint Coder runs on every start (idempotent)
 .bash_profile           # login shells source ~/.bashrc
 .config/starship.toml   # prompt config
+.config/zellij/         # zellij config.kdl + layouts/default.kdl (zellaude Claude Code bar)
 aliases/custom.bash     # aliases (sourced for both bash and zsh)
 custom/custom.bash      # general interactive bash config: env, keybindings, refresh-creds
 engineering/            # engineering-only layer - delete for a general-purpose setup

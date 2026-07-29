@@ -1,0 +1,21 @@
+// Default zellij layout, symlinked into ~/.config/zellij/layouts/ by install.sh.
+// Named default.kdl so zellij applies it to every new session.
+//
+// The top bar is zellaude (https://github.com/ishefi/zellaude) - it replaces the
+// stock tab-bar with a Claude Code activity indicator. zellij fetches the plugin
+// wasm on first use, and the plugin auto-installs its Claude Code hooks into
+// ~/.claude/settings.json (backing up to .bak), so only this layout + config.kdl
+// need version-controlling. Pinned to v0.5.0 (not "latest") so a new release
+// can't silently change behaviour - bump after reviewing the diff. The hook
+// requires jq at runtime (present on the Coder image).
+layout {
+    default_tab_template {
+        pane size=1 borderless=true {
+            plugin location="https://github.com/ishefi/zellaude/releases/download/v0.5.0/zellaude.wasm"
+        }
+        children
+        pane size=2 borderless=true {
+            plugin location="zellij:status-bar"
+        }
+    }
+}

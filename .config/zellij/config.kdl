@@ -1,0 +1,13 @@
+// Zellij config, symlinked into ~/.config/zellij/ by install.sh.
+// Config/layout changes apply to NEW sessions only (kill + restart to pick up).
+
+// Option+Left/Right on macOS sends Alt+b / Alt+f (bash word-skip).
+// Unbind those so they pass through instead of toggling floating panes / etc.
+keybinds {
+    shared {
+        unbind "Alt f" "Alt b"
+    }
+}
+
+// Bigger scrollback for long Claude Code sessions
+scroll_buffer_size 50000
