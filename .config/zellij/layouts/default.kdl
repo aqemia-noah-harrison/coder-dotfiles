@@ -8,6 +8,9 @@
 // need version-controlling. Pinned to v0.5.0 (not "latest") so a new release
 // can't silently change behaviour - bump after reviewing the diff. The hook
 // requires jq at runtime (present on the Coder image).
+//
+// If you bump the version here, also update the pre-granted plugin-permission
+// block in install.sh (it is keyed to this exact URL).
 layout {
     default_tab_template {
         pane size=1 borderless=true {

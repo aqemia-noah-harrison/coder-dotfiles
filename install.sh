@@ -167,6 +167,26 @@ if [ -d "$DOTFILES_DIR/.config/zellij" ]; then
   mkdir -p "$HOME/.config/zellij/layouts"
   ln -sf "$DOTFILES_DIR/.config/zellij/config.kdl"          "$HOME/.config/zellij/config.kdl"
   ln -sf "$DOTFILES_DIR/.config/zellij/layouts/default.kdl" "$HOME/.config/zellij/layouts/default.kdl"
+
+  # Pre-grant zellaude's plugin permissions so the first-run permission popup
+  # doesn't block users who miss it. Scoped to the exact pinned plugin URL (keep
+  # in sync with layouts/default.kdl); appended idempotently so other plugins'
+  # grants are never clobbered. This pre-approves ONLY this reviewed plugin -
+  # zellij has no blanket "trust all plugins" switch, by design.
+  zj_cache="${XDG_CACHE_HOME:-$HOME/.cache}/zellij"
+  mkdir -p "$zj_cache"
+  if ! grep -q 'zellaude/releases/download/v0.5.0' "$zj_cache/permissions.kdl" 2>/dev/null; then
+    cat >> "$zj_cache/permissions.kdl" <<'KDL'
+
+"https://github.com/ishefi/zellaude/releases/download/v0.5.0/zellaude.wasm" {
+    ReadCliPipes
+    MessageAndLaunchOtherPlugins
+    ReadApplicationState
+    ChangeApplicationState
+    RunCommands
+}
+KDL
+  fi
 fi
 
 # --- mosh-server + UTF-8 locales (no root; conda + ~/.locale) ---
