@@ -83,6 +83,7 @@ fetch the MCP binaries) is authenticated rather than anonymous/rate-limited.
 ## Layout
 
 ```
+CLAUDE.md               # agent guidance: keep this README in sync; preserve invariants
 install.sh              # entrypoint Coder runs on every start (idempotent)
 .bash_profile           # login shells source ~/.bashrc
 .config/starship.toml   # prompt config
