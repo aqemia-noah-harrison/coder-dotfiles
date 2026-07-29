@@ -147,4 +147,115 @@ BASHRC
 
 fi
 
+# ============================================================================
+# Personal additions (ported from ~/personalize). Install-time only; the
+# interactive-shell bits (functions, aliases, mise activate) live in
+# custom/custom.bash. Everything here is idempotent (safe to re-run each start).
+# ============================================================================
+
+# --- Bridge Coder git credentials into the gh CLI ---
+# Coder auths git HTTPS via GIT_ASKPASS but not `gh` itself. Without this the
+# release downloads below fall back to anonymous and hit API rate limits.
+if ! gh auth status -h github.com >/dev/null 2>&1 && [ -s ~/.git-credentials ]; then
+  awk -F'[:@]' '/x-access-token/{print $3}' ~/.git-credentials \
+    | gh auth login --hostname github.com --with-token >/dev/null 2>&1 || true
+fi
+
+# --- observability-core plugin MCP binaries -> ~/.local/bin (persistent) ---
+# The plugin ships .mcp.json but not the binaries; on Coder Linux workspaces we
+# install them ourselves from upstream releases.
+mkdir -p ~/.local/bin
+install_obs_mcp() {
+  local repo=$1 bin=$2
+  command -v "$bin" >/dev/null 2>&1 && return 0
+  local tmp; tmp=$(mktemp -d)
+  gh release download --repo "$repo" --pattern "${bin}_Linux_x86_64.tar.gz" --dir "$tmp" \
+    && tar -xzf "$tmp/${bin}_Linux_x86_64.tar.gz" -C "$tmp" "$bin" \
+    && install -m 0755 "$tmp/$bin" ~/.local/bin/
+  rm -rf "$tmp"
+}
+install_obs_mcp VictoriaMetrics-Community/mcp-victoriametrics mcp-victoriametrics || true
+install_obs_mcp VictoriaMetrics-Community/mcp-victorialogs    mcp-victorialogs    || true
+install_obs_mcp grafana/mcp-grafana                           mcp-grafana         || true
+
+# --- 1Password CLI -> ~/.local/bin (persistent) ---
+# https://www.1password.dev/cli/get-started#linux-2
+install_op_cli() {
+  command -v op >/dev/null 2>&1 && return 0
+  local version tmp
+  version=$(curl -fsSL "https://app-updates.agilebits.com/check/1/0/CLI2/en/2.0.0/N" 2>/dev/null | jq -r .version)
+  if [ -z "$version" ] || [ "$version" = "null" ]; then
+    echo "install_op_cli: failed to determine latest version" >&2
+    return 1
+  fi
+  tmp=$(mktemp -d)
+  curl -fsSL "https://cache.agilebits.com/dist/1P/op2/pkg/v${version}/op_linux_amd64_v${version}.zip" -o "$tmp/op.zip" \
+    && unzip -q "$tmp/op.zip" -d "$tmp" op \
+    && install -m 0755 "$tmp/op" ~/.local/bin/
+  rm -rf "$tmp"
+}
+install_op_cli || true
+
+# --- Extra mise-managed tools ---
+if command -v mise >/dev/null 2>&1; then
+  mise use -g zellij@latest || true
+fi
+
+# --- mosh-server + UTF-8 locales (no root; conda + ~/.locale) ---
+# mosh isn't in the mise registry and apt needs root, so install the conda-forge
+# build into an isolated prefix. mosh forwards the client's LANG (e.g.
+# en_GB.UTF-8) but the image ships only C.UTF-8 / en_US.UTF-8 and locale-gen
+# needs root, so compile the locales we use into ~/.locale.
+MOSH_PREFIX="$HOME/.local/mosh"
+CONDA_BIN="$(command -v conda || echo /opt/conda/bin/conda)"
+if [ ! -x "$MOSH_PREFIX/bin/mosh-server" ] && [ -x "$CONDA_BIN" ]; then
+  echo "Installing mosh-server via conda..."
+  "$CONDA_BIN" create -y -p "$MOSH_PREFIX" -c conda-forge mosh || true
+fi
+
+LOCALE_DIR="$HOME/.locale"
+if command -v localedef >/dev/null 2>&1; then
+  for loc in en_GB en_US; do
+    if [ ! -d "$LOCALE_DIR/${loc}.UTF-8" ] && [ -f "/usr/share/i18n/locales/${loc}" ]; then
+      echo "Compiling ${loc}.UTF-8 locale into $LOCALE_DIR..."
+      mkdir -p "$LOCALE_DIR"
+      localedef -i "$loc" -f UTF-8 "$LOCALE_DIR/${loc}.UTF-8" || true
+    fi
+  done
+fi
+
+# Wire mosh-server's PATH + UTF-8 locale into the shell startup files. The mosh
+# client runs `mosh-server` over a NON-interactive ssh command, so the env must
+# reach non-interactive shells:
+#   bash: prepend to ~/.bashrc ABOVE the AQEMIA_INTERACTIVE_GUARD - a plain
+#         append would sit below the guard's early `return` and never run for
+#         sshd-spawned shells.
+#   zsh : append to ~/.zshenv (always sourced, even non-interactively).
+if [ -x "$MOSH_PREFIX/bin/mosh-server" ] && [ -d "$LOCALE_DIR/en_GB.UTF-8" ]; then
+  if [ -f ~/.bashrc ] && ! grep -q 'AQEMIA_MOSH_ENV' ~/.bashrc 2>/dev/null; then
+    tmp=$(mktemp)
+    cat > "$tmp" <<EOF
+# AQEMIA_MOSH_ENV - must be ABOVE the interactive guard: the mosh client runs
+# \`mosh-server\` via a non-interactive ssh command, and bash returns early at
+# the guard for sshd-spawned shells, so mosh-server's PATH and a resolvable
+# UTF-8 locale have to be set here first.
+export LOCPATH="\$HOME/.locale"
+export LANG="en_GB.UTF-8"
+export PATH="$MOSH_PREFIX/bin:\$PATH"
+
+EOF
+    cat ~/.bashrc >> "$tmp"
+    mv "$tmp" ~/.bashrc
+  fi
+  if ! grep -q 'AQEMIA_MOSH_ENV' ~/.zshenv 2>/dev/null; then
+    cat >> ~/.zshenv <<EOF
+
+# AQEMIA_MOSH_ENV
+export LOCPATH="\$HOME/.locale"
+export LANG="en_GB.UTF-8"
+export PATH="$MOSH_PREFIX/bin:\$PATH"
+EOF
+  fi
+fi
+
 echo "Dotfiles installed successfully."
