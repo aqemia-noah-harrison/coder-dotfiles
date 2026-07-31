@@ -158,6 +158,14 @@ if command -v mise >/dev/null 2>&1; then
   mise use -g zellij@latest || true
 fi
 
+# --- gh CLI extensions ---
+# gh-stack: `gh stack` for GitHub stacked PRs.
+if command -v gh >/dev/null 2>&1; then
+  if ! gh extension list 2>/dev/null | grep -q 'github/gh-stack'; then
+    gh extension install github/gh-stack || true
+  fi
+fi
+
 # --- Zellij config + zellaude layout ---
 # Symlink our zellij config/layout in. The zellaude plugin referenced in
 # layouts/default.kdl is fetched by zellij on first use and self-installs its
