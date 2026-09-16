@@ -4,5 +4,6 @@
 
 # Editor opened by Ctrl+E. leaf ignores $EDITOR and defaults to nano, so set it
 # here. Priority: --editor flag > LEAF_EDITOR > this file > nano.
-# Add +{$line} to open at the line currently visible in leaf: editor = 'vim +{$line}'
-editor = "vim"
+# +{$line} opens vim at the line currently visible in leaf, so Ctrl+E lands where
+# you were reading instead of at the top of the file.
+editor = "vim +{$line}"
