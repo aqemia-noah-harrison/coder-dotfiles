@@ -42,3 +42,21 @@ connect_to_db() {
               --profile "${CONNECT_DB_PROFILES[$1]}" \
               --query 'SecretString' --output text | jq -r ".\"$CONNECT_DB_DSN_KEY\"")"
 }
+
+# refresh-creds: re-run the workspace credential-refresh scripts in the current
+# shell (handy in a long-lived pane where the periodic refresh hasn't landed).
+# The scripts live in an infra-repo checkout whose path is kept out of this repo:
+# it is read from ~/.refresh-creds.env (0600, in $HOME, never committed). Example:
+#   CREDS_SCRIPT_DIR="$HOME/repos/<private-repo>/.../_shared"
+refresh-creds() {
+    local cfg="$HOME/.refresh-creds.env"
+    [ -f "$cfg" ] && source "$cfg"
+    if [ -z "${CREDS_SCRIPT_DIR:-}" ] || [ ! -d "$CREDS_SCRIPT_DIR" ]; then
+        echo "refresh-creds: set CREDS_SCRIPT_DIR in $cfg to your creds-script directory" >&2
+        return 1
+    fi
+    bash "$CREDS_SCRIPT_DIR/aws-credentials.sh"   || return $?
+    bash "$CREDS_SCRIPT_DIR/codeartifact-auth.sh" || return $?
+    [ -f ~/.codeartifact.env ]     && source ~/.codeartifact.env
+    [ -f ~/.aws-pod-identity.env ] && source ~/.aws-pod-identity.env
+}

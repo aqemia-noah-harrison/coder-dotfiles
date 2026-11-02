@@ -79,8 +79,8 @@ fetch the MCP binaries) is authenticated rather than anonymous/rate-limited.
 ### Shell functions
 | Function | Layer | Purpose |
 |----------|-------|---------|
-| `refresh-creds` | [general] | Refresh AWS Pod-Identity + CodeArtifact creds in the current shell (relevant to any long-running workspace) |
 | `claude` | [general] | Inside zellij, runs `claude-zellij` so restored panes resume their conversation (see [Claude Code in zellij](#claude-code-in-zellij)). Outside zellij, runs `claude` as usual. `command claude` skips the function |
+| `refresh-creds` | [eng] | Refresh AWS Pod-Identity + CodeArtifact creds in the current shell. The creds-script directory is read from `~/.refresh-creds.env` (kept in `$HOME`, not committed), so no internal repo path lives in this repo |
 | `connect_to_db <env>` | [eng] | Open `psql` against a database by short env name. The env->profile map, secret id, and DSN key are read from `~/.connect_to_db.env` (kept in `$HOME`, not committed), so no environment or target names live in this repo |
 
 ### Aliases ([general], see `aliases/custom.bash`)
@@ -98,10 +98,10 @@ install.sh              # entrypoint Coder runs on every start (idempotent)
 .config/leaf/           # leaf config.toml (Ctrl+E opens vim, not nano)
 bin/                    # claude-zellij wrapper + its SessionStart hook (wrapper linked into ~/.local/bin)
 aliases/custom.bash     # aliases (sourced for both bash and zsh)
-custom/custom.bash      # general interactive bash config: env, keybindings, refresh-creds
+custom/custom.bash      # general interactive bash config: env, keybindings, claude wrapper
 engineering/            # engineering-only layer - delete for a general-purpose setup
   install.sh            #   gh bridge, observability MCP binaries, op (1Password) CLI
-  shell.bash            #   op-sa.env sourcing, connect_to_db (symlinked into ~/.bash_it/custom/)
+  shell.bash            #   op-sa.env sourcing, connect_to_db, refresh-creds (symlinked into ~/.bash_it/custom/)
 ```
 
 `install.sh` runs the general setup, then - only if `engineering/` exists and
@@ -167,6 +167,7 @@ in `$HOME` (recreate these per workspace):
 
 - `~/.op-sa.env` *(eng)* - 1Password service-account token
 - `~/.codeartifact.env`, `~/.aws-pod-identity.env` - refreshed AWS/CodeArtifact creds
+- `~/.refresh-creds.env` *(eng)* - sets `CREDS_SCRIPT_DIR`, the directory of the workspace creds-refresh scripts that `refresh-creds` runs
 - `~/.connect_to_db.env` *(eng)* - the `connect_to_db` env->profile map, secret id, and DSN key. Format:
 
   ```bash
