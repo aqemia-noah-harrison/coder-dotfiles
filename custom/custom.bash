@@ -66,20 +66,6 @@ if [[ $- == *i* ]]; then
   bind '"\e[B": history-search-forward'
 fi
 
-# Refresh AWS Pod-Identity + CodeArtifact creds in the current shell. Useful
-# inside long-lived tmux/zellij panes where the periodic refresh hasn't landed.
-refresh-creds() {
-  local shared=~/repos/engineering/infra/aws/modules/coder-management/templates/_shared
-  if [ ! -d "$shared" ]; then
-    echo "refresh-creds: $shared not found - is the engineering repo checked out?" >&2
-    return 1
-  fi
-  bash "$shared/aws-credentials.sh"   || return $?
-  bash "$shared/codeartifact-auth.sh" || return $?
-  [ -f ~/.codeartifact.env ] && source ~/.codeartifact.env
-  [ -f ~/.aws-pod-identity.env ] && source ~/.aws-pod-identity.env
-}
-
 # Inside zellij, start Claude Code through claude-zellij so a restored pane
 # resumes its conversation (see bin/claude-zellij). Outside zellij there is
 # nothing to restore, so run claude as usual. `command claude` skips this.

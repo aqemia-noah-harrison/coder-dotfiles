@@ -27,6 +27,15 @@ commit. In particular:
 - **No secrets or environment/target names in the repo.** They live in `0600`
   files under `$HOME` and are only sourced if present (e.g. `~/.op-sa.env`,
   `~/.connect_to_db.env`). The repo is public.
+- **No confidential or internal detail, because the repo is public.** Anyone can
+  read every file and the full git history. Beyond the secrets and
+  environment/target names ruled out above, keep out internal paths and names:
+  absolute paths inside private repos (for example `~/repos/<private-repo>/...`),
+  internal URLs, and internal service identifiers. Naming Aqemia as the employer
+  and describing the engineering-layer tooling is intentional and allowed; the
+  limit is confidential or internal detail, not the company name. Keep
+  Aqemia-specific tooling in `engineering/`, and even there read internal paths and
+  target names from `0600` files under `$HOME` at runtime instead of committing them.
 - **Keep the general vs engineering split clean.** Engineering-only tooling lives
   under `engineering/` and is gated on that directory existing; deleting the
   directory must still leave a working general-purpose setup.
