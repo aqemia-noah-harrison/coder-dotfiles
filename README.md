@@ -167,7 +167,11 @@ in `$HOME` (recreate these per workspace):
 
 - `~/.op-sa.env` *(eng)* - 1Password service-account token
 - `~/.codeartifact.env`, `~/.aws-pod-identity.env` - refreshed AWS/CodeArtifact creds
-- `~/.refresh-creds.env` *(eng)* - sets `CREDS_SCRIPT_DIR`, the directory of the workspace creds-refresh scripts that `refresh-creds` runs
+- `~/.refresh-creds.env` *(eng)* - sets `CREDS_SCRIPT_DIR`, the directory of the workspace creds-refresh scripts that `refresh-creds` runs. Format:
+
+  ```bash
+  CREDS_SCRIPT_DIR="$HOME/repos/<private-repo>/.../_shared"
+  ```
 - `~/.connect_to_db.env` *(eng)* - the `connect_to_db` env->profile map, secret id, and DSN key. Format:
 
   ```bash
