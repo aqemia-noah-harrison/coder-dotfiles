@@ -263,6 +263,31 @@ fi
 mkdir -p "$HOME/.local/bin"
 ln -sf "$DOTFILES_DIR/bin/claude-zellij" "$HOME/.local/bin/claude-zellij"
 
+# --- Claude Code status line ---
+# Symlink the status line script (model, directory, git branch, context usage
+# bar) into ~/.claude, then point Claude Code at it. Only the `statusLine` key of
+# ~/.claude/settings.json is touched, and only when it is not set yet, so other
+# settings (plugins, permissions, hooks) and a deliberately different status
+# line are left alone. Needs jq, both here and in the script itself.
+mkdir -p "$HOME/.claude"
+ln -sf "$DOTFILES_DIR/.claude/statusline-command.sh" "$HOME/.claude/statusline-command.sh"
+if command -v jq >/dev/null 2>&1; then
+  claude_settings="$HOME/.claude/settings.json"
+  if [ ! -f "$claude_settings" ]; then
+    (umask 077 && printf '{}\n' > "$claude_settings")
+  fi
+  if ! jq -e 'has("statusLine")' "$claude_settings" >/dev/null 2>&1; then
+    tmp=$(mktemp)
+    if jq '.statusLine = {"type": "command", "command": "~/.claude/statusline-command.sh"}' \
+         "$claude_settings" > "$tmp"; then
+      chmod --reference="$claude_settings" "$tmp" 2>/dev/null || chmod 600 "$tmp"
+      mv "$tmp" "$claude_settings"
+    else
+      rm -f "$tmp"
+    fi
+  fi
+fi
+
 # --- mosh-server + UTF-8 locales (no root; conda + ~/.locale) ---
 # mosh isn't in the mise registry and apt needs root, so install the conda-forge
 # build into an isolated prefix. mosh forwards the client's LANG (e.g.

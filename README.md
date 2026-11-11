@@ -54,6 +54,7 @@ workspace image; the dotfiles only wire them up.
 | **zellaude** *(zellij plugin)* | [general] | `.config/zellij/layouts/default.kdl` | Claude Code activity bar. Pinned to `v0.5.0`; zellij fetches the wasm on first use and it auto-installs hooks into `~/.claude/settings.json`. Needs `jq`. `install.sh` pre-grants its zellij plugin permissions (scoped to the pinned URL) so the first-run permission popup is skipped |
 | **leaf** | [general] | `~/.local/bin` | Terminal Markdown previewer (`leaf FILE.md`, `-w` to reload on save). Release binary from `RivoLink/leaf`, SHA256-verified; `leaf --update` moves to a newer release. Config symlinked from `.config/leaf/` so `Ctrl+E` opens vim (leaf ignores `$EDITOR` and defaults to nano) |
 | **claude-zellij** | [general] | `~/.local/bin` (symlink to `bin/`) | Runs Claude Code so that a restored zellij pane resumes its conversation. See [Claude Code in zellij](#claude-code-in-zellij). Needs `jq` |
+| **Claude Code status line** | [general] | `~/.claude/statusline-command.sh` (symlink to `.claude/`) | Two-line status bar at the bottom of Claude Code: model, directory, git branch with staged (`+`) and modified (`~`) counts, a link to the repo, and a context usage bar (green, yellow from 70%, red from 90%). `install.sh` adds the `statusLine` key to `~/.claude/settings.json` only if it is not set, and changes nothing else in that file. Needs `jq` |
 | **mosh-server** | [general] | `~/.local/mosh` | Roaming SSH; conda-forge build (no root needed) |
 | **UTF-8 locales** | [general] | `~/.locale` | `en_GB.UTF-8` / `en_US.UTF-8` via `localedef` (mosh needs a resolvable UTF-8 locale) |
 | **mcp-victoriametrics** | [eng] | `~/.local/bin` | observability-core plugin MCP (metrics) |
@@ -96,6 +97,7 @@ install.sh              # entrypoint Coder runs on every start (idempotent)
 .config/starship.toml   # prompt config
 .config/zellij/         # zellij config.kdl + layouts/default.kdl (zellaude Claude Code bar)
 .config/leaf/           # leaf config.toml (Ctrl+E opens vim, not nano)
+.claude/statusline-command.sh  # Claude Code status line script (linked into ~/.claude)
 bin/                    # claude-zellij wrapper + its SessionStart hook (wrapper linked into ~/.local/bin)
 aliases/custom.bash     # aliases (sourced for both bash and zsh)
 custom/custom.bash      # general interactive bash config: env, keybindings, claude wrapper
